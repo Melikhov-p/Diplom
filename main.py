@@ -18,8 +18,8 @@ for i in range(5):
     axs[i, j].xaxis.set_visible(False)
     axs[i, j].yaxis.set_visible(False)
     a = a + 1
-x_train  =  x_train . astype ( 'float32' ) /  255.
-x_test  =  x_test . astype ( 'float32' ) /  255.
+x_train  =  x_train.astype ( 'float32' )/255.
+x_test  =  x_test.astype ( 'float32' )/255.
 x_train = x_train[..., tf.newaxis]
 x_test = x_test[..., tf.newaxis]
 print(x_train.shape)
@@ -43,35 +43,42 @@ for i in range(n):
   plt.imshow(tf.squeeze(x_test_noisy[i]))
 plt.show()
 from tensorflow.keras.layers import Conv2DTranspose, Conv2D, Input
+import os.path
 
 
-class NoiseReducer(tf.keras.Model):
-    def __init__(self):
-        super(NoiseReducer, self).__init__()
 
-        self.encoder = tf.keras.Sequential([
-            Input(shape=(28, 28, 1)),
-            Conv2D(16, (3, 3), activation='relu', padding='same', strides=2),
-            Conv2D(8, (3, 3), activation='relu', padding='same', strides=2)])
+if os.path.exists('model')==False or input('Загрузить прошлую модель?(Y/N): ')== 'N':
+    class NoiseReducer(tf.keras.Model):
+        def __init__(self):
+            super(NoiseReducer, self).__init__()
 
-        self.decoder = tf.keras.Sequential([
-            Conv2DTranspose(8, kernel_size=3, strides=2, activation='relu', padding='same'),
-            Conv2DTranspose(16, kernel_size=3, strides=2, activation='relu', padding='same'),
-            Conv2D(1, kernel_size=(3, 3), activation='sigmoid', padding='same')])
+            self.encoder = tf.keras.Sequential([
+                Input(shape=(28, 28, 1)),
+                Conv2D(16, (3, 3), activation='relu', padding='same', strides=2),
+                Conv2D(8, (3, 3), activation='relu', padding='same', strides=2),])
 
-    def call(self, x):
-        encoded = self.encoder(x)
-        decoded = self.decoder(encoded)
-        return decoded
-autoencoder = NoiseReducer()
-autoencoder.compile(optimizer='adam', loss='mse')
-autoencoder.fit(x_train_noisy,
-                x_train,
-                epochs=10,
-                shuffle=True,
-                validation_data=(x_test_noisy, x_test))
-encoded_imgs=autoencoder.encoder(x_test_noisy).numpy()
-decoded_imgs=autoencoder.decoder(encoded_imgs)
+            self.decoder = tf.keras.Sequential([
+                Conv2DTranspose(8, kernel_size=3, strides=2, activation='relu', padding='same'),
+                Conv2DTranspose(16, kernel_size=3, strides=2, activation='relu', padding='same'),
+                Conv2D(1, kernel_size=(3, 3), activation='sigmoid', padding='same')])
+
+        def call(self, x):
+            encoded = self.encoder(x)
+            decoded = self.decoder(encoded)
+            return decoded
+    autoencoder = NoiseReducer()
+    autoencoder.compile(optimizer='adam', loss='mse', metrics=['accuracy'])
+    autoencoder.fit(x_train_noisy,
+                     x_train,
+                     epochs=1,
+                     shuffle=True,
+                     validation_data=(x_test_noisy, x_test))
+    encoded_imgs=autoencoder.encoder(x_test_noisy).numpy()
+    decoded_imgs=autoencoder.decoder(encoded_imgs)
+else:
+    autoencoder = tf.keras.models.load_model("model")
+    encoded_imgs = autoencoder.encoder(x_test_noisy).numpy()
+    decoded_imgs = autoencoder.decoder(encoded_imgs)
 n = 10
 plt.figure(figsize=(20, 7))
 plt.gray()
@@ -96,5 +103,7 @@ for i in range(n):
   plt.imshow(tf.squeeze(x_test[i]))
   ax.get_xaxis().set_visible(False)
   ax.get_yaxis().set_visible(False)
+
+autoencoder.save('model')
 
 plt.show()
