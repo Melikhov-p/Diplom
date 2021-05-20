@@ -48,9 +48,9 @@ import os.path
 
 
 if os.path.exists('model')==False or input('Загрузить прошлую модель?(Y/N): ')== 'N':
-    class NoiseReducer(tf.keras.Model):
+    class Denoiser(tf.keras.Model):
         def __init__(self):
-            super(NoiseReducer, self).__init__()
+            super(Denoiser, self).__init__()
 
             self.encoder = tf.keras.Sequential([
                 Input(shape=(28, 28, 1)),
@@ -66,7 +66,7 @@ if os.path.exists('model')==False or input('Загрузить прошлую м
             encoded = self.encoder(x)
             decoded = self.decoder(encoded)
             return decoded
-    autoencoder = NoiseReducer()
+    autoencoder = Denoiser()
     autoencoder.compile(optimizer='adam', loss='mse', metrics=['accuracy'])
     autoencoder.fit(x_train_noisy,
                      x_train,
