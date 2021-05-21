@@ -70,7 +70,7 @@ if os.path.exists('model')==False or input('Загрузить прошлую м
     autoencoder.compile(optimizer='adam', loss='mse', metrics=['accuracy'])
     autoencoder.fit(x_train_noisy,
                      x_train,
-                     epochs=1,
+                     epochs=10,
                      shuffle=True,
                      validation_data=(x_test_noisy, x_test))
     encoded_imgs=autoencoder.encoder(x_test_noisy).numpy()
